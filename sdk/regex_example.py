@@ -7,6 +7,6 @@ var img_list1 = [];
 """
 
 p = re.compile("(https:....cdnwowmax.xyz..upload..[a-z0-9-]+.jpg)")
-m = p.match(html_str)
+m = p.findall(html_str)
 
 print(m)
