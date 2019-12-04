@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-import requests, zipfile, os
+import requests, zipfile, os, re
 from bs4 import BeautifulSoup
 from multiprocessing import Pool
 
-minitoon_host = "https://manamoa19.net"
+minitoon_host = "https://manamoa20.net"
 
-download_url = "https://manamoa19.net/bbs/page.php?hid=manga_detail&manga_id=2127"     # 불멸의 그대에게 
+download_url = "https://manamoa20.net/bbs/page.php?hid=manga_detail&manga_id=2127"     # 불멸의 그대에게 
 
 def get_list():
     headers = {'Content-Type': 'charset=utf-8'}
@@ -53,18 +53,25 @@ def get_list():
     #print(str_input)
     return index_list
 
+def get_img_list(html_str):
+    p = re.compile("(https:....cdnwowmax.xyz..upload..[a-z0-9-]+.jpg)")
+    img_list = p.findall(html_str)
+    return img_list
+
 # target 만화책을 다운로드 한다. 
 def down_comic(target):
     global target_url
     target_url = minitoon_host + target.a['href']
+    print(target_url)
     r = requests.get(target_url)
     
+    imgs_urls = get_img_list(r.text)
     bs = BeautifulSoup(r.text, 'lxml')
-    title = bs.find("div", class_='toon-title').text.strip()
-    div = bs.find("div", class_="view-content scroll-viewer")
+    title = bs.find("meta", name='title').text.strip()
+    #div = bs.find("div", class_="view-content scroll-viewer")
     
-    imgs = div.find_all('img')
-    imgs_urls = [ img['src'] for img in imgs ]
+    #imgs = div.find_all('img')
+    #imgs_urls = [ img['src'] for img in imgs ]
     
     print("{0} 다운로드 시작".format(title))
     
