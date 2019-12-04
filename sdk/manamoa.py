@@ -62,17 +62,18 @@ def get_img_list(html_str):
 def down_comic(target):
     global target_url
     target_url = minitoon_host + target.a['href']
-    print(target_url)
     r = requests.get(target_url)
     
     imgs_urls = get_img_list(r.text)
     bs = BeautifulSoup(r.text, 'lxml')
-    title = bs.find("meta", name='title').text.strip()
+    
+    title = bs.find("meta", attrs = {"name":"title"}).text.strip()
     #div = bs.find("div", class_="view-content scroll-viewer")
     
     #imgs = div.find_all('img')
     #imgs_urls = [ img['src'] for img in imgs ]
     
+        
     print("{0} 다운로드 시작".format(title))
     
     with Pool(processes=2) as pool:
