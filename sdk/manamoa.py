@@ -54,7 +54,7 @@ def get_list():
     return index_list
 
 def get_img_list(html_str):
-    p = re.compile("(https:....cdnwowmax.xyz..upload..[a-z0-9-]+.jpg)")
+    p = re.compile("(https:....cdnwowmax.xyz....upload..[a-z0-9-]+.jpg)")
     img_list = p.findall(html_str)
     return img_list
 
@@ -73,7 +73,8 @@ def down_comic(target):
     #imgs = div.find_all('img')
     #imgs_urls = [ img['src'] for img in imgs ]
     
-        
+    print(title)
+    title = "aaa"
     print("{0} 다운로드 시작".format(title))
     
     with Pool(processes=2) as pool:
@@ -93,6 +94,7 @@ def down_comic(target):
 # file_url 의 이미지를 다운로드 
 def down_img(file_url):
     
+    file_url = file_url.replace("\/", "/")
     file_name = file_url.split("/")[-1]
      
     headers = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:44.0) Gecko/20100101 Firefox/44.0', 'Referer': target_url }
