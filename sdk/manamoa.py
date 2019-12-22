@@ -3,12 +3,11 @@ import requests, zipfile, os, re
 from bs4 import BeautifulSoup
 from multiprocessing import Pool
 
-minitoon_host = "https://manamoa20.net"
-
-download_url = "https://manamoa20.net/bbs/page.php?hid=manga_detail&manga_id=2127"     # 불멸의 그대에게 
+minitoon_host = "https://manamoa22.net"
+download_url = "https://manamoa22.net/bbs/page.php?hid=manga_detail&manga_id=2127"     # 불멸의 그대에게 
 
 def get_list():
-    headers = {'Content-Type': 'charset=utf-8'}
+    headers = {'Content-Type': 'charset=utf-8', "authority": "manamoa20.net", "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36"}
     r = requests.get(download_url, headers=headers)
     
     bs = BeautifulSoup(r.text, "lxml")
@@ -53,28 +52,29 @@ def get_list():
     #print(str_input)
     return index_list
 
+
 def get_img_list(html_str):
     p = re.compile("(https:....cdnwowmax.xyz....upload..[a-z0-9-]+.jpg)")
     img_list = p.findall(html_str)
     return img_list
+
 
 # target 만화책을 다운로드 한다. 
 def down_comic(target):
     global target_url
     target_url = minitoon_host + target.a['href']
     r = requests.get(target_url)
+    html_str = r.text
     
-    imgs_urls = get_img_list(r.text)
-    bs = BeautifulSoup(r.text, 'lxml')
+    imgs_urls = get_img_list(html_str)
+    bs = BeautifulSoup(html_str, 'lxml')
+    title = bs.find("meta", attrs = {"name":"title"})["content"].strip()
     
-    title = bs.find("meta", attrs = {"name":"title"}).text.strip()
     #div = bs.find("div", class_="view-content scroll-viewer")
     
     #imgs = div.find_all('img')
     #imgs_urls = [ img['src'] for img in imgs ]
     
-    print(title)
-    title = "aaa"
     print("{0} 다운로드 시작".format(title))
     
     with Pool(processes=2) as pool:
@@ -83,13 +83,19 @@ def down_comic(target):
     pool.join()
     
     with zipfile.ZipFile(u"{0}.zip".format(title), 'w') as myzip:
-        for file_url in imgs_urls:
-            file_name = file_url.split("/")[-1]
-            myzip.write(file_name)
-            os.remove(file_name)
+        for index, file_url in enumerate(imgs_urls):
+            file_url = file_url.replace("\/", "/")
+            origin_file_name = file_url.split("/")[-1]
+
+            file_url = file_url.replace("\/", "/")
+            new_file_name = "{0}.{1}".format(index, file_url.split(".")[-1])
+            
+            os.rename(origin_file_name, new_file_name)
+            myzip.write(new_file_name)
+            os.remove(new_file_name)
     
     print("{0} 다운로드 종료".format(title))
-    
+
 
 # file_url 의 이미지를 다운로드 
 def down_img(file_url):
@@ -104,6 +110,7 @@ def down_img(file_url):
     output = open(file_name,"wb")
     output.write(r1.content)
     output.close()    
+
 
 if __name__ == "__main__":
     targets = get_list()
