@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
-import requests, zipfile, os, re
+import requests, zipfile, os, re, sys
 from bs4 import BeautifulSoup
 from multiprocessing import Pool
 
-minitoon_host = "https://manamoa22.net"
-download_url = "https://manamoa22.net/bbs/page.php?hid=manga_detail&manga_id=2127"     # 불멸의 그대에게 
+minitoon_host = "https://manamoa23.net"
+download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=2127" # 고블린 슬레이어 
+#download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=2111" # 고블린 슬레이어-이어원
+#download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=2110" # 고블린 슬레이어-브랜뉴데이 
+
+#download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=1640" # 피와 재의 여왕 
+
+#download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=1140" # 자중 안 하는 전 용사의 강하고 즐거운 뉴 게임 
 
 def get_list():
     headers = {'Content-Type': 'charset=utf-8', "authority": "manamoa20.net", "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36"}
@@ -56,6 +62,15 @@ def get_list():
 def get_img_list(html_str):
     p = re.compile("(https:....cdnwowmax.xyz....upload..[a-z0-9-]+.jpg)")
     img_list = p.findall(html_str)
+    
+    if len(img_list) == 0:
+        p = re.compile("(https:....cdnwowmax.xyz..upload..[a-z0-9-]+.jpg)")
+        img_list = p.findall(html_str)
+    
+    if len(img_list) == 0:
+        print(html_str)
+        sys.exit(0)
+    
     return img_list
 
 
@@ -70,11 +85,6 @@ def down_comic(target):
     bs = BeautifulSoup(html_str, 'lxml')
     title = bs.find("meta", attrs = {"name":"title"})["content"].strip()
     
-    #div = bs.find("div", class_="view-content scroll-viewer")
-    
-    #imgs = div.find_all('img')
-    #imgs_urls = [ img['src'] for img in imgs ]
-    
     print("{0} 다운로드 시작".format(title))
     
     with Pool(processes=2) as pool:
@@ -83,22 +93,29 @@ def down_comic(target):
     pool.join()
     
     with zipfile.ZipFile(u"{0}.zip".format(title), 'w') as myzip:
+        print("  압축시작")
         for index, file_url in enumerate(imgs_urls):
             file_url = file_url.replace("\/", "/")
             origin_file_name = file_url.split("/")[-1]
 
             file_url = file_url.replace("\/", "/")
-            new_file_name = "{0}.{1}".format(index, file_url.split(".")[-1])
+            new_file_name = "{0}-{2}.{1}".format(index, file_url.split(".")[-1], title)
+            
+            print("    {0} to {1} 변경 및 압축".format(origin_file_name, new_file_name))
             
             os.rename(origin_file_name, new_file_name)
             myzip.write(new_file_name)
             os.remove(new_file_name)
-    
+        
+        print("  압축종료")
+        
     print("{0} 다운로드 종료".format(title))
 
 
 # file_url 의 이미지를 다운로드 
 def down_img(file_url):
+    
+    print('  {0}: {1}'.format('이미지 파일 다운로드', file_url))
     
     file_url = file_url.replace("\/", "/")
     file_name = file_url.split("/")[-1]
