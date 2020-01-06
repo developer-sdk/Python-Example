@@ -4,13 +4,15 @@ from bs4 import BeautifulSoup
 from multiprocessing import Pool
 
 minitoon_host = "https://manamoa23.net"
-download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=2127" # 고블린 슬레이어 
+#download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=2127" # 고블린 슬레이어 
 #download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=2111" # 고블린 슬레이어-이어원
 #download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=2110" # 고블린 슬레이어-브랜뉴데이 
 
 #download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=1640" # 피와 재의 여왕 
 
 #download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=1140" # 자중 안 하는 전 용사의 강하고 즐거운 뉴 게임 
+
+download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=161" # 던전밥 
 
 def get_list():
     headers = {'Content-Type': 'charset=utf-8', "authority": "manamoa20.net", "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36"}
@@ -60,15 +62,30 @@ def get_list():
 
 
 def get_img_list(html_str):
-    p = re.compile("(https:....cdnwowmax.xyz....upload..[a-z0-9-]+.jpg)")
-    img_list = p.findall(html_str)
+    p = re.compile("(https:.{2,4}cdnwowmax.xyz.{2,4}upload..[a-z0-9-]+.jpe?g)")
+    
+    str_start = html_str.index("var img_list")
+    str_end = html_str.find("\n", html_str.index("var img_list"))
+    str_img_list = html_str[str_start:str_end]
+
+    #img_list = p.findall(str_img_list)
+    
+    img_list = str_img_list[str_img_list.index("[") + 1:str_img_list.index("]")].split(",")
+    img_list = [ img[1:-1].replace("\/", "/") for img in img_list ]
+
+    '''
+    if len(img_list) == 0:
+        p = re.compile("(https:.{2,4}cdnwowmax.xyz.{2,4}upload..v1..[a-z0-9-]+.jpe?g)")
+        img_list = p.findall(str_img_list)
     
     if len(img_list) == 0:
-        p = re.compile("(https:....cdnwowmax.xyz..upload..[a-z0-9-]+.jpg)")
-        img_list = p.findall(html_str)
+        p = re.compile("(https?:.{2,4}img.filecdn.xyz.{2,4}upload..[a-z0-9-]+.jpe?g)")
+        img_list = p.findall(str_img_list)
+    '''
     
     if len(img_list) == 0:
         print(html_str)
+        print(img_list)
         sys.exit(0)
     
     return img_list
