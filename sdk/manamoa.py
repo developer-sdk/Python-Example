@@ -3,16 +3,15 @@ import requests, zipfile, os, re, sys
 from bs4 import BeautifulSoup
 from multiprocessing import Pool
 
-minitoon_host = "https://manamoa23.net"
-#download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=2127" # 고블린 슬레이어 
-#download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=2111" # 고블린 슬레이어-이어원
-#download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=2110" # 고블린 슬레이어-브랜뉴데이 
+minitoon_host = "https://manamoa52.net"
 
-#download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=1640" # 피와 재의 여왕 
-
-#download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=1140" # 자중 안 하는 전 용사의 강하고 즐거운 뉴 게임 
-
-download_url = "https://manamoa23.net/bbs/page.php?hid=manga_detail&manga_id=161" # 던전밥 
+download_url = "https://manamoa52.net/bbs/page.php?hid=manga_detail&manga_id=2127" # 고블린 슬레이어 
+#download_url = "https://manamoa25.net/bbs/page.php?hid=manga_detail&manga_id=2111" # 고블린 슬레이어-이어원
+#download_url = "https://manamoa25.net/bbs/page.php?hid=manga_detail&manga_id=2110" # 고블린 슬레이어-브랜뉴데이 
+#download_url = "https://manamoa25.net/bbs/page.php?hid=manga_detail&manga_id=1640" # 피와 재의 여왕 
+#download_url = "https://manamoa25.net/bbs/page.php?hid=manga_detail&manga_id=1140" # 자중 안 하는 전 용사의 강하고 즐거운 뉴 게임 
+#download_url = "https://manamoa52.net/bbs/page.php?hid=manga_detail&manga_id=161" # 던전밥 
+#download_url = "https://manamoa25.net/bbs/page.php?hid=manga_detail&manga_id=3226" # 마스터키튼 
 
 def get_list():
     headers = {'Content-Type': 'charset=utf-8', "authority": "manamoa20.net", "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36"}
@@ -61,32 +60,23 @@ def get_list():
     return index_list
 
 
-def get_img_list(html_str):
-    p = re.compile("(https:.{2,4}cdnwowmax.xyz.{2,4}upload..[a-z0-9-]+.jpe?g)")
+def get_img_list(html_str, img_list_str):
     
-    str_start = html_str.index("var img_list")
-    str_end = html_str.find("\n", html_str.index("var img_list"))
+    str_var_img = "var " + img_list_str
+    str_start = html_str.index(str_var_img)
+    str_end = html_str.find("\n", html_str.index(str_var_img))
     str_img_list = html_str[str_start:str_end]
-
-    #img_list = p.findall(str_img_list)
     
     img_list = str_img_list[str_img_list.index("[") + 1:str_img_list.index("]")].split(",")
     img_list = [ img[1:-1].replace("\/", "/") for img in img_list ]
-
-    '''
-    if len(img_list) == 0:
-        p = re.compile("(https:.{2,4}cdnwowmax.xyz.{2,4}upload..v1..[a-z0-9-]+.jpe?g)")
-        img_list = p.findall(str_img_list)
     
-    if len(img_list) == 0:
-        p = re.compile("(https?:.{2,4}img.filecdn.xyz.{2,4}upload..[a-z0-9-]+.jpe?g)")
-        img_list = p.findall(str_img_list)
-    '''
+    #if len(img_list) == 0:
+    #    print(html_str)
+    #    print(img_list)
+    #    sys.exit(0)
     
-    if len(img_list) == 0:
-        print(html_str)
-        print(img_list)
-        sys.exit(0)
+    if len(img_list) == 1 and img_list[0] == '':
+        del img_list[0]
     
     return img_list
 
@@ -98,13 +88,34 @@ def down_comic(target):
     r = requests.get(target_url)
     html_str = r.text
     
-    imgs_urls = get_img_list(html_str)
+    imgs_urls1 = get_img_list(html_str, "img_list")
+    imgs_urls2 = get_img_list(html_str, "img_list1")
+    
+    if len(imgs_urls1) == 0 and len(imgs_urls2) == 0:
+        print(html_str)
+        print(imgs_urls1)
+        print(imgs_urls2)
+        sys.exit(1)
+        
+    if len(imgs_urls1) != 0:
+        imgs_urls = imgs_urls1
+    elif len(imgs_urls2) != 0:
+        imgs_urls = imgs_urls2
+    else:
+        imgs_urls = imgs_urls1
+    
     bs = BeautifulSoup(html_str, 'lxml')
     title = bs.find("meta", attrs = {"name":"title"})["content"].strip()
     
+    print("="*30)
+    print(title)
+    print(imgs_urls1)
+    print(imgs_urls2)
+    print("="*30)
+    
     print("{0} 다운로드 시작".format(title))
     
-    with Pool(processes=2) as pool:
+    with Pool(processes=8) as pool:
         pool.map(down_img, imgs_urls)
         
     pool.join()
